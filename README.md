@@ -243,23 +243,34 @@ Ctrl + D
 
 ## Generating Video from Timelapse
 
-### Method 1: Generating on Raspberry Pi (slower)
+⚠️ **Important Performance Note**:
+Based on our tests, video generation on Raspberry Pi Zero W is extremely slow:
+- Processing speed: ~0.3 frames per second
+- Example: 438 frames took over 30 minutes to process
+- CPU usage is very high during the process
+- Not recommended for large timelapse projects
+
+### Method 1: Generating on Raspberry Pi (NOT RECOMMENDED)
 ```bash
 # On Raspberry Pi:
 ffmpeg -framerate 24 -pattern_type glob -i 'timelapse/*.jpg' -c:v libx264 -pix_fmt yuv420p timelapse_final.mp4
+
+# WARNING: This method is very slow! 
+# Example: 400 frames ≈ 30 minutes of processing
+# Consider using Method 2 or 3 instead
 ```
 
-### Method 2: Generating on Computer (faster)
+### Method 2: Generating on Computer (RECOMMENDED)
 ```powershell
 # In PowerShell on computer:
-# Creating folder
+# 1. Create folder for photos
 mkdir timelapse_photos
 
-# Copying photos
+# 2. Copy photos from Raspberry Pi
 scp admin@[raspberry_pi_ip]:~/kamera/timelapse/*.jpg timelapse_photos/
 
-# Generating video (requires ffmpeg on computer)
-ffmpeg -framerate 24 -pattern_type glob -i 'timelapse_photos/*.jpg' -c:v libx264 -pix_fmt yuv420p timelapse_final.mp4
+# 3. Generate video (much faster than on Raspberry Pi)
+ffmpeg -framerate 24 -pattern_type glob -i "timelapse_photos/*.jpg" -c:v libx264 -preset ultrafast -pix_fmt yuv420p timelapse_final.mp4
 ```
 
 ### Method 3: Transferring Packed Photos
@@ -270,6 +281,16 @@ tar -czf timelapse_photos.tar.gz timelapse/
 # In PowerShell on computer:
 scp admin@[raspberry_pi_ip]:~/kamera/timelapse_photos.tar.gz .
 ```
+
+### Performance Tips
+1. Always generate videos on a PC rather than Raspberry Pi Zero W
+2. Use `-preset ultrafast` for faster processing
+3. For better quality (but slower processing), remove the `-preset` parameter
+4. If you have an NVIDIA GPU, you can use hardware acceleration:
+   ```powershell
+   ffmpeg -framerate 24 -pattern_type glob -i "timelapse_photos/*.jpg" -c:v h264_nvenc -preset p1 -pix_fmt yuv420p timelapse_final.mp4
+   ```
+5. For very large timelapses (thousands of photos), consider using Method 3 with tar
 
 ## Configuration Parameters
 
