@@ -1,0 +1,22 @@
+# Web application framework
+flask==3.0.2
+
+# Camera handling
+picamera2==0.3.16
+
+# Numerical computations and array handling
+numpy==1.26.4
+
+# Image processing (optional, for additional features)
+opencv-python==4.9.0.80
+
+# Additional Flask dependencies
+Werkzeug==3.0.1
+click==8.1.7
+itsdangerous==2.1.2
+Jinja2==3.1.3
+MarkupSafe==2.1.5
+
+# Time zone handling
+python-dateutil==2.8.2
+pytz==2024.1 
