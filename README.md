@@ -490,3 +490,49 @@ fi
    - 1000 photos = ~2-3GB
    - At 60s interval = ~50GB/day
 4. Consider automatic copying to external drive or NAS 
+
+## Basic File Operations
+
+### Editing Files with Nano
+```bash
+# Open file in nano editor
+nano app_3.py
+
+# Nano keyboard shortcuts:
+# Ctrl + O    - Save file
+# Enter       - Confirm save
+# Ctrl + X    - Exit nano
+# Ctrl + K    - Cut line
+# Ctrl + U    - Paste line
+# Ctrl + W    - Search text
+# Ctrl + G    - Show help
+```
+
+### Viewing Files
+```bash
+# View file content
+cat app_3.py
+
+# View last few lines
+tail app_3.py
+
+# View file with line numbers
+nl app_3.py
+```
+
+### File Management
+```bash
+# List files
+ls -l
+
+# Check file size
+du -h app_3.py
+
+# Copy file
+cp app_3.py app_3_backup.py
+
+# Delete file
+rm app_3_backup.py
+```
+
+These commands are essential for managing and editing your camera applications on Raspberry Pi. 
