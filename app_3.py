@@ -8,8 +8,18 @@ import threading
 import argparse
 import os
 import cv2
+import logging
+
+# Configure logging to suppress debug messages
+logging.basicConfig(level=logging.WARNING)
+os.environ["LIBCAMERA_LOG_LEVELS"] = "3"  # Only show warnings and errors
 
 app = Flask(__name__)
+# Disable Flask's default logging
+app.logger.disabled = True
+log = logging.getLogger('werkzeug')
+log.disabled = True
+
 picam2 = Picamera2()
 
 # Configuration for timelapse (high quality photos)
@@ -22,31 +32,42 @@ preview_config = picam2.create_preview_configuration(main={"size": (800, 600)})
 output_folder = "timelapse"
 interval = 60
 is_running = True
+camera_lock = threading.Lock()
 
 def get_timestamp():
     return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-def capture_timelapse():
-    global is_running
-    while is_running:
-        # Switch to photo configuration
-        picam2.switch_mode_and_capture_file(still_config, 
-            f"{output_folder}/timelapse_{get_timestamp()}.jpg")
-        time.sleep(interval)
+def capture_timelapse(output_dir, interval):
+    global picam2
+    while True:
+        try:
+            with camera_lock:
+                picam2.stop()
+                picam2.configure(still_config)
+                picam2.start()
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{output_dir}/photo_{timestamp}.jpg"
+                picam2.capture_file(filename)
+                print(f"Captured: {filename}")
+            time.sleep(interval)
+        except Exception as e:
+            print(f"Error in timelapse capture: {e}")
 
 def generate_preview():
-    # Switch to preview configuration
-    picam2.configure(preview_config)
-    picam2.start()
-    
+    global picam2
     while True:
-        frame = picam2.capture_array()
-        # Convert to JPEG
-        success, jpeg_data = cv2.imencode('.jpg', frame)
-        if success:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + jpeg_data.tobytes() + b'\r\n')
-        time.sleep(0.1)
+        try:
+            with camera_lock:
+                picam2.stop()
+                picam2.configure(preview_config)
+                picam2.start()
+                im = picam2.capture_array()
+                frame = cv2.imencode('.jpg', im)[1].tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(0.1)  # Small delay to prevent too frequent configuration changes
+        except Exception as e:
+            print(f"Error in preview generation: {e}")
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -94,7 +115,7 @@ if __name__ == '__main__':
     os.makedirs(output_folder, exist_ok=True)
 
     # Start timelapse in separate thread
-    timelapse_thread = threading.Thread(target=capture_timelapse)
+    timelapse_thread = threading.Thread(target=lambda: capture_timelapse(output_folder, interval))
     timelapse_thread.daemon = True
     timelapse_thread.start()
 
