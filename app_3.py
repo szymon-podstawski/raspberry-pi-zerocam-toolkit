@@ -33,9 +33,12 @@ output_folder = "timelapse"
 interval = 60
 is_running = True
 camera_lock = threading.Lock()
+photo_counter = 0  # Add counter for photos
 
-def get_timestamp():
-    return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+def get_filename():
+    global photo_counter
+    photo_counter += 1
+    return f"img_{photo_counter:03d}.jpg"  # Format: img_001.jpg, img_002.jpg, etc.
 
 def capture_timelapse(output_dir, interval):
     global picam2
@@ -45,8 +48,7 @@ def capture_timelapse(output_dir, interval):
                 picam2.stop()
                 picam2.configure(still_config)
                 picam2.start()
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"{output_dir}/photo_{timestamp}.jpg"
+                filename = f"{output_dir}/{get_filename()}"
                 picam2.capture_file(filename)
                 print(f"Captured: {filename}")
             time.sleep(interval)
